@@ -1,8 +1,13 @@
+/* Tweaks for XBMC
+ * Tested with "Frodo" 12.2
+ */
+
+
 /* "Kürzlich hinzugefügt" richtig* berechnen:
  * Das Datum richtet sich nach dem Datum des Hinzufügens in die Datenbank
  * statt nach dem Created Datum der entsprechenden Datei.
  */
- DROP TRIGGER IF EXISTS `bi_files`
+ DROP TRIGGER IF EXISTS `bi_files`;
  CREATE TRIGGER `bi_files` BEFORE INSERT ON `files` FOR EACH ROW SET NEW.dateAdded = now();
   
 /* Die sogenannten RESUME Bookmarks werden pro SQL Account angelegt
@@ -28,7 +33,7 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 AUTO_INCREMENT=0;
 
-CREATE TRIGGER `bi_bookmark` BEFORE INSERT ON `bookmark` FOR EACH ROW SET NEW.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
+CREATE TRIGGER `bi_bookmark` BEFORE INSERT ON `bookmark` FOR EACH ROW SET NEW.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
 
 /* Erzeugt die Tabelle, welche den 'watched' Status pro SQL Account verwaltet
  * statt ein Status für alle Benutzer
@@ -68,10 +73,10 @@ CREATE VIEW `movieview` AS
 		JOIN files ON    files.idFile=movie.idFile  
 		JOIN path ON    path.idPath=files.idPath  
 		LEFT JOIN bookmark ON    bookmark.idFile=movie.idFile AND bookmark.type=1 AND bookmark.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
-		LEFT JOIN filestate ON filestate.idFile = files.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
+		LEFT JOIN filestate ON filestate.idFile = files.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
 		
 		
-/* View für Serien anpassen, um den watched state zu verteilen
+/* View für Episoden(Serien) anpassen, um den watched state zu verteilen
  */		
 DROP VIEW IF EXISTS `episodeview`;		
 CREATE VIEW `episodeview` AS
@@ -88,3 +93,20 @@ CREATE VIEW `episodeview` AS
 	JOIN path ON files.idPath=path.idPath
 	LEFT JOIN bookmark ON bookmark.idFile=episode.idFile AND bookmark.type=1
 	LEFT JOIN filestate ON filestate.idFile = files.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
+	
+
+/* View für Serien anpassen, um den watched state zu verteilen
+ */		
+DROP VIEW IF EXISTS `tvshowview`;
+CREATE VIEW `tvshowview` AS
+	SELECT 
+		tvshow.*, path.strPath AS strPath, path.dateAdded AS dateAdded, 
+		MAX(filestate.lastPlayed) AS lastPlayed, NULLIF(COUNT(episode.c12), 0) AS totalCount, 
+		COUNT(filestate.playCount) AS watchedcount, NULLIF(COUNT(DISTINCT(episode.c12)), 0) AS totalSeasons
+	FROM tvshow
+	LEFT JOIN tvshowlinkpath ON tvshowlinkpath.idShow=tvshow.idShow
+	LEFT JOIN path ON path.idPath=tvshowlinkpath.idPath
+	LEFT JOIN episode ON episode.idShow=tvshow.idShow
+	LEFT JOIN files ON files.idFile=episode.idFile
+	LEFT JOIN filestate on filestate.idFile = episode.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
+	GROUP BY tvshow.idShow
