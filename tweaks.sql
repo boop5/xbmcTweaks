@@ -69,3 +69,22 @@ CREATE VIEW `movieview` AS
 		JOIN path ON    path.idPath=files.idPath  
 		LEFT JOIN bookmark ON    bookmark.idFile=movie.idFile AND bookmark.type=1 AND bookmark.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
 		LEFT JOIN filestate ON filestate.idFile = files.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
+		
+		
+/* View für Serien anpassen, um den watched state zu verteilen
+ */		
+DROP VIEW IF EXISTS `episodeview`;		
+CREATE VIEW `episodeview` AS
+	SELECT 
+		episode.*, files.strFileName AS strFileName, path.strPath AS strPath, 
+		filestate.playCount AS playCount, filestate.lastPlayed AS lastPlayed, files.dateAdded AS dateAdded, 
+		tvshow.c00 AS strTitle, tvshow.c14 AS strStudio, tvshow.c05 AS premiered, tvshow.c13 AS mpaa, 
+		tvshow.c16 AS strShowPath, bookmark.timeInSeconds AS resumeTimeInSeconds,
+		bookmark.totalTimeInSeconds AS totalTimeInSeconds, seasons.idSeason AS idSeason
+	FROM episode
+	JOIN files ON files.idFile=episode.idFile
+	JOIN tvshow ON tvshow.idShow=episode.idShow
+	LEFT JOIN seasons ON seasons.idShow=episode.idShow AND seasons.season=episode.c12
+	JOIN path ON files.idPath=path.idPath
+	LEFT JOIN bookmark ON bookmark.idFile=episode.idFile AND bookmark.type=1
+	LEFT JOIN filestate ON filestate.idFile = files.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
