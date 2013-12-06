@@ -2,13 +2,12 @@
  * Tested with "Frodo" 12.2
  */
 
-
 /* "Kürzlich hinzugefügt" richtig* berechnen:
  * Das Datum richtet sich nach dem Datum des Hinzufügens in die Datenbank
  * statt nach dem Created Datum der entsprechenden Datei.
  */
- DROP TRIGGER IF EXISTS `bi_files`;
- CREATE TRIGGER `bi_files` BEFORE INSERT ON `files` FOR EACH ROW SET NEW.dateAdded = now();
+DROP TRIGGER IF EXISTS `bi_files`;
+CREATE TRIGGER `bi_files` BEFORE INSERT ON `files` FOR EACH ROW SET NEW.dateAdded = now();
   
 /* Die sogenannten RESUME Bookmarks werden pro SQL Account angelegt
  * statt für Alle Benutzer.
@@ -38,8 +37,8 @@ CREATE TRIGGER `bi_bookmark` BEFORE INSERT ON `bookmark` FOR EACH ROW SET NEW.sq
 /* Erzeugt die Tabelle, welche den 'watched' Status pro SQL Account verwaltet
  * statt ein Status für alle Benutzer
  */
- DROP TABLE IF EXISTS `filestate`;
- CREATE TABLE `filestate` (
+DROP TABLE IF EXISTS `filestate`;
+CREATE TABLE `filestate` (
 	`idFile` INT(11) NOT NULL,
 	`lastPlayed` TEXT NOT NULL,
 	`playCount` INT NOT NULL,
