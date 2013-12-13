@@ -41,7 +41,7 @@ DROP TABLE IF EXISTS `filestate`;
 CREATE TABLE `filestate` (
 	`idFile` INT(11) NOT NULL,
 	`lastPlayed` TEXT NOT NULL,
-	`playCount` INT NOT NULL,
+	`playCount` INT,
 	`sqlUser` VARCHAR(250) NOT NULL,
 	PRIMARY KEY (`idFile`),
 	UNIQUE INDEX `idFile_sqlUser` (`idFile`, `sqlUser`)
