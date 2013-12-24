@@ -40,7 +40,7 @@ CREATE TRIGGER `bi_bookmark` BEFORE INSERT ON `bookmark` FOR EACH ROW SET NEW.sq
 DROP TABLE IF EXISTS `filestate`;
 CREATE TABLE `filestate` (
 	`idFile` INT(11) NOT NULL,
-	`lastPlayed` TEXT NOT NULL,
+	`lastPlayed` TEXT,
 	`playCount` INT,
 	`sqlUser` VARCHAR(250) NOT NULL,
 	PRIMARY KEY (`idFile`),
