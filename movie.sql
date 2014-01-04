@@ -1,5 +1,5 @@
 /* Tweaks for XBMC
- * Tested with "Frodo" 12.2
+ * Tested with "Frodo" 12.2 / 12.3
  */
 
 /* "Kürzlich hinzugefügt" richtig* berechnen:
@@ -43,7 +43,6 @@ CREATE TABLE `filestate` (
 	`lastPlayed` TEXT,
 	`playCount` INT,
 	`sqlUser` VARCHAR(250) NOT NULL,
-	PRIMARY KEY (`idFile`),
 	UNIQUE INDEX `idFile_sqlUser` (`idFile`, `sqlUser`)
 )
 COLLATE='utf8_general_ci'
