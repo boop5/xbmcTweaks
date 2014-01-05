@@ -2,20 +2,22 @@
  * Tested with "Frodo" 12.2 / 12.3
  */
 
-/* "Kürzlich hinzugefügt" richtig* berechnen:
- * Das Datum richtet sich nach dem Datum des Hinzufügens in die Datenbank
+/* "KÃ¼rzlich hinzugefÃ¼gt" richtig* berechnen:
+ * Das Datum richtet sich nach dem Datum des HinzufÃ¼gens in die Datenbank
  * statt nach dem Created Datum der entsprechenden Datei.
  */
 DROP TRIGGER IF EXISTS `bi_files`;
 CREATE TRIGGER `bi_files` BEFORE INSERT ON `files` FOR EACH ROW SET NEW.dateAdded = now();
   
 /* Die sogenannten RESUME Bookmarks werden pro SQL Account angelegt
- * statt für Alle Benutzer.
+ * statt fÃ¼r Alle Benutzer.
  */ 
 DROP TABLE IF EXISTS `bookmark`;
+DROP VIEW IF EXISTS `bookmark`;
+DROP TABLE IF EXISTS `bookmark_orig`;
 DROP TRIGGER IF EXISTS `bi_bookmark`;
 
-CREATE TABLE `bookmark` (
+CREATE TABLE `bookmark_orig` (
     `idBookmark` INT(11) NOT NULL AUTO_INCREMENT,
     `idFile` INT(11) NULL DEFAULT NULL,
     `timeInSeconds` DOUBLE NULL DEFAULT NULL,
@@ -32,10 +34,15 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 AUTO_INCREMENT=0;
 
-CREATE TRIGGER `bi_bookmark` BEFORE INSERT ON `bookmark` FOR EACH ROW SET NEW.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
+CREATE TRIGGER `bi_bookmark` BEFORE INSERT ON `bookmark_orig` FOR EACH ROW SET NEW.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
+
+CREATE VIEW `bookmark` AS
+	SELECT idBookmark, idFile, timeinSeconds, totalTimeInSeconds, thumbnailImage, player, playerstate, type
+	FROM bookmark_orig
+	WHERE bookmark_orig.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
 
 /* Erzeugt die Tabelle, welche den 'watched' Status pro SQL Account verwaltet
- * statt ein Status für alle Benutzer
+ * statt ein Status fÃ¼r alle Benutzer
  */
 DROP TABLE IF EXISTS `filestate`;
 CREATE TABLE `filestate` (
@@ -48,7 +55,7 @@ CREATE TABLE `filestate` (
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB;
 
-/* Trigger der den Playcount etc überträgt
+/* Trigger der den Playcount etc Ã¼bertrÃ¤gt
  */
 DELIMITER |
 DROP TRIGGER IF EXISTS `bu_files`; 
@@ -59,22 +66,22 @@ CREATE TRIGGER `bu_files` BEFORE UPDATE ON `files`
 	END;
 
 /* Erzeugt die movieview neu. 
- * Enthält auch Änderungen für die RESUME bookmarks
+ * EnthÃ¤lt auch Ã„nderungen fÃ¼r die RESUME bookmarks
  */
 DROP VIEW IF EXISTS `movieview`;
 CREATE VIEW `movieview` AS
 	SELECT  movie.*,  sets.strSet AS strSet,  files.strFileName AS strFileName,  path.strPath AS strPath,  
 			filestate.playCount AS playCount,  filestate.lastPlayed AS lastPlayed,   files.dateAdded AS dateAdded,   
-			bookmark.timeInSeconds AS resumeTimeInSeconds,   bookmark.totalTimeInSeconds AS totalTimeInSeconds 
+			bookmark_orig.timeInSeconds AS resumeTimeInSeconds,   bookmark_orig.totalTimeInSeconds AS totalTimeInSeconds 
 		FROM movie  
 		LEFT JOIN sets ON    sets.idSet = movie.idSet  
 		JOIN files ON    files.idFile=movie.idFile  
 		JOIN path ON    path.idPath=files.idPath  
-		LEFT JOIN bookmark ON    bookmark.idFile=movie.idFile AND bookmark.type=1 AND bookmark.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
+		LEFT JOIN bookmark_orig ON    bookmark_orig.idFile=movie.idFile AND bookmark_orig.type=1 AND bookmark_orig.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
 		LEFT JOIN filestate ON filestate.idFile = files.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
 		
 		
-/* View für Episoden(Serien) anpassen, um den watched state zu verteilen
+/* View fÃ¼r Episoden(Serien) anpassen, um den watched state zu verteilen
  */		
 DROP VIEW IF EXISTS `episodeview`;		
 CREATE VIEW `episodeview` AS
@@ -82,18 +89,18 @@ CREATE VIEW `episodeview` AS
 		episode.*, files.strFileName AS strFileName, path.strPath AS strPath, 
 		filestate.playCount AS playCount, filestate.lastPlayed AS lastPlayed, files.dateAdded AS dateAdded, 
 		tvshow.c00 AS strTitle, tvshow.c14 AS strStudio, tvshow.c05 AS premiered, tvshow.c13 AS mpaa, 
-		tvshow.c16 AS strShowPath, bookmark.timeInSeconds AS resumeTimeInSeconds,
-		bookmark.totalTimeInSeconds AS totalTimeInSeconds, seasons.idSeason AS idSeason
+		tvshow.c16 AS strShowPath, bookmark_orig.timeInSeconds AS resumeTimeInSeconds,
+		bookmark_orig.totalTimeInSeconds AS totalTimeInSeconds, seasons.idSeason AS idSeason
 	FROM episode
 	JOIN files ON files.idFile=episode.idFile
 	JOIN tvshow ON tvshow.idShow=episode.idShow
 	LEFT JOIN seasons ON seasons.idShow=episode.idShow AND seasons.season=episode.c12
 	JOIN path ON files.idPath=path.idPath
-	LEFT JOIN bookmark ON bookmark.idFile=episode.idFile AND bookmark.type=1
+	LEFT JOIN bookmark_orig ON bookmark_orig.idFile=episode.idFile AND bookmark_orig.type=1 AND bookmark_orig.sqlUser = SUBSTRING_INDEX(USER(),'@',1)
 	LEFT JOIN filestate ON filestate.idFile = files.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
 	
 
-/* View für Serien anpassen, um den watched state zu verteilen
+/* View fÃ¼r Serien anpassen, um den watched state zu verteilen
  */		
 DROP VIEW IF EXISTS `tvshowview`;
 CREATE VIEW `tvshowview` AS
