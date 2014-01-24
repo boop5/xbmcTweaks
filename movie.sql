@@ -57,13 +57,15 @@ ENGINE=InnoDB;
 
 /* Trigger der den Playcount etc überträgt
  */
-DELIMITER |
+DELIMITER //;
 DROP TRIGGER IF EXISTS `bu_files`; 
 CREATE TRIGGER `bu_files` BEFORE UPDATE ON `files` 
 	FOR EACH ROW BEGIN
 		DELETE FROM filestate WHERE filestate.idFile = new.idFile AND filestate.sqlUser = SUBSTRING_INDEX(USER(),'@',1);
 		INSERT INTO filestate (idFile, lastPlayed, playCount, sqlUser) VALUES(new.idFile, new.lastPlayed, new.playCount, SUBSTRING_INDEX(USER(),'@',1));
-	END;
+	END;//
+	
+DELIMITER ;
 
 /* Erzeugt die movieview neu. 
  * Enthält auch Änderungen für die RESUME bookmarks
