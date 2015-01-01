@@ -106,9 +106,9 @@ DROP VIEW IF EXISTS `tvshowcounts`;
 CREATE VIEW tvshowcounts AS
 	SELECT
 		tvshow.idShow AS idShow,
-        MAX(files.lastPlayed) AS lastPlayed,
+        MAX(filestate.lastPlayed) AS lastPlayed,
         NULLIF(COUNT(episode.c12), 0) AS totalCount,
-        COUNT(files.playCount) AS watchedcount,
+        COUNT(filestate.playCount) AS watchedcount,
         NULLIF(COUNT(DISTINCT(episode.c12)), 0) AS totalSeasons,
 		MAX(files.dateAdded) as dateAdded
 	FROM tvshow
@@ -129,7 +129,7 @@ CREATE VIEW seasonview AS
 		tvshowview.c14 AS strStudio,
 		tvshowview.c13 AS mpaa,
 		count(DISTINCT episodeview.idEpisode) AS episodes,
-		count(files.playCount) AS playCount
+		count(filestate.playCount) AS playCount
 	FROM seasons
         JOIN tvshowview ON tvshowview.idShow = seasons.idShow
         JOIN episodeview ON episodeview.idShow = seasons.idShow AND episodeview.12 = seasons.season
